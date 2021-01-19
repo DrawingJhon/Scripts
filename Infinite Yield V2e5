@@ -155,8 +155,8 @@ do
 	FakeGame.service = FakeGame.GetService
 	FakeService(FakeGame,game)
 	--Changing owner to fake player object to support owner:GetMouse()
-	getfenv(Load).game,getfenv(Load).owner = FakeGame,FakeGame.Players.LocalPlayer
-	getfenv(Load).loadstring = function(source, bool)
+	game,owner = FakeGame,FakeGame.Players.LocalPlayer
+	loadstring = function(source, bool)
 		return Loadstring(source, "FE_String")
 	end
 end

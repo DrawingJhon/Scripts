@@ -5575,7 +5575,7 @@ UserInputService.InputBegan:Connect(function(input,gameProcessed)
 	end
 end)
 
-Players.LocalPlayer.Chatted:Connect(function()
+Players.LocalPlayer.Chatted:Connect(function(message)
 	wait()
 	if true then
 		--local message = lastEnteredString

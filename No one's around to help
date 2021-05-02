@@ -32,8 +32,9 @@ local FavIDs = {
 
 --The reality of my life isn't real but a Universe -makhail07
 wait()
-local plr = game.Players:WaitForChild(_G.target)
+local plr = game.Players.LocalPlayer
 print('Local User is '..plr.Name)
+local mouse = plr:GetMouse()
 local char = plr.Character
 local hum = char.Humanoid
 local hed = char.Head
@@ -261,7 +262,7 @@ function Damage(Part, hit, minim, maxim, knockback, Type, Property, Delay, HitSo
          end
 		local c = Create("ObjectValue"){
 			Name = "creator",
-			Value = game.Players:WaitForChild(_G.target),
+			Value = game.Players.LocalPlayer,
 			Parent = h,
 		}
 		game:GetService("Debris"):AddItem(c, .5)

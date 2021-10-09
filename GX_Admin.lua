@@ -1634,7 +1634,7 @@ Commands = setmetatable({
 	};
 	
 	ClientTeleport = {
-		Commands = {"teleport", "tp"};
+		Commands = {"tp"; "teleport"; "transport"};
 		Args = {"player1", "player2"};
 		Description = "Teleports a player (Client)";
 		Function = function(plr, args)
@@ -1715,7 +1715,7 @@ Commands = setmetatable({
 	
 	To = {
 		Commands = {"to"; "tpmeto"};
-		Args = {};
+		Args = {"players"};
 		Description = "Teleport you to the target";
 		FE = true;
 		Function = function(plr, args)

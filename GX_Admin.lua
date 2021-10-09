@@ -307,6 +307,9 @@ service = setmetatable({
 		end
 		return client.Variables.LocalContainer
 	end;
+	GetTime = function()
+		return os.time();
+	end;
 }, {
 	__index = function(self, index)
 		local found = Functions[index]

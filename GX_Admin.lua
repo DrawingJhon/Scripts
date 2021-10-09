@@ -831,7 +831,7 @@ Process = {
 								end 
 							elseif error and type(error) ~= "string" then
 								if not isSystem then 
-									Functions.Output("There was an error but the error was not a string? "..tostring(error)) 
+									--Functions.Output("There was an error but the error was not a string? "..tostring(error)) 
 								end 
 							end
 						end

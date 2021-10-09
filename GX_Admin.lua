@@ -2434,6 +2434,15 @@ Commands = setmetatable({
 		end
 	};
 	
+	Rejoin = {
+		Commands = {"rejoin"};
+		Args = {};
+		Description = "Makes you rejoin the server";
+		Function = function(plr, args)
+			service.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, plr)
+		end
+	};
+	
 	}, {__newindex = function(self, index, value)
 		rawset(self, index, value)
 		Admin.CommandCache[value.Command] = index

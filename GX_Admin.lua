@@ -865,7 +865,7 @@ Process = {
 		end)
 	end;
 	Chat = function(p, msg)
-		Logs.AddLog(Logs.Chat, {
+		Logs.AddLog(Logs.Chats, {
 			Text = p.Name..": ".. tostring(msg);
 			Desc = tostring(msg);
 			Player = p;

@@ -377,10 +377,25 @@ Functions = {
 								end
 							end
 						end
-					else
+					elseif msg:sub(1,1) == "@" then
 						for i, v in pairs(service.Players:GetPlayers()) do
-							if v.Name:lower():sub(1,#msg) == msg:lower() then
+							if v.Name:lower():sub(1,#msg) == msg:lower():sub(2) then
 								table.insert(listplrs, v)
+							end
+						end
+					else
+						local found = false
+						for i, v in pairs(service.Players:GetPlayers()) do
+							if v.DisplayName:lower():sub(1, #msg) == msg:lower() then
+								found = true
+								table.insert(listplrs, v)
+							end
+						end
+						if not found then
+							for i, v in pairs(service.Players:GetPlayers()) do
+								if v.Name:lower():sub(1, #msg) == msg:lower() then
+									table.insert(listplrs, v)
+								end
 							end
 						end
 					end
@@ -408,14 +423,21 @@ Functions = {
 		end
 		return PlayerList
 	end;
-	PlayAnimation = function(player, animId)
-		if player.Character and tonumber(animId) then
-			local human = player.Character:findFirstChildOfClass("Humanoid")
-			if human and not human:findFirstChildOfClass("Animator") then
-				service.New("Animator", human)
-			end
-			Remote.Send(player, "Function", "PlayAnimation", animId)
-		end
+	PlayAnimation = function(animId)
+		if animId == 0 then return end
+
+		local char = service.Player.Character
+		local human = char and char:FindFirstChildOfClass("Humanoid")
+		local animator = human and human:FindFirstChildOfClass("Animator") or human and human:WaitForChild("Animator", 9e9)
+		if not animator then return end
+
+		for _, v in ipairs(animator:GetPlayingAnimationTracks()) do v:Stop() end
+		local anim = service.New('Animation', {
+			AnimationId = 'rbxassetid://'..animId,
+			Name = "ADONIS_Animation"
+		})
+		local track = animator:LoadAnimation(anim)
+		track:Play()
 	end;
 	SetLighting = function(prop, value)
 		if service.Lighting[prop] ~= nil then
@@ -2200,6 +2222,7 @@ Commands = setmetatable({
 				spinner.AngularVelocity = Vector3.new(0, tonumber(args[1]) or 10, 0)
 				spinner.MaxTorque = Vector3.new(0, math.huge, 0)
 				spinner.P = 1250
+				spinner.Parent = root
 			end
 		end
 	};
@@ -2277,7 +2300,139 @@ Commands = setmetatable({
 		Function = function(plr, args)
 			
 		end
-	}
+	};
+	
+	Animation = {
+		Commands = {"animation"; "loadanim"; "animate"};
+		Args = {"animationID"};
+		FE = true;
+		Description = "Load the animation onto the character";
+		Function = function(plr, args)
+			assert(tonumber(args[1]), tostring(args[1]).." is not a valid ID")
+			
+			Functions.PlayAnimation(args[1])
+		end
+	};
+
+	Dance = {
+		Commands = {"dance";};
+		Args = {};
+		FE = true;
+		Description = "Make the character dance";
+		Function = function(plr, args)
+			local human = plr.Character and plr.Character:findFirstChildOfClass("Humanoid")
+			if human then
+				local rigType = human and (human.RigType == Enum.HumanoidRigType.R6 and "R6" or "R15") or nil
+				Functions.PlayAnimation(rigType == "R6" and 27789359 or 507771019)
+			end
+		end
+	};
+	
+	Waypoint = {
+		Commands = {"waypoint"; "wp"; "checkpoint"};
+		Args = {"name"};
+		Description = "Makes a new waypoint/sets an exiting one to your current position with the name <name> that you can teleport to using :tp me waypoint-<name>";
+		Function = function(plr, args)
+			local name=args[1] or tostring(#Variables.Waypoints+1)
+			if plr.Character:FindFirstChild('HumanoidRootPart') then
+				Variables.Waypoints[name] = plr.Character.HumanoidRootPart.Position
+				Functions.Hint('Made waypoint '..name..' | '..tostring(Variables.Waypoints[name]),{plr})
+			end
+		end
+	};
+	
+	DeleteWaypoint = {
+		Commands = {"delwaypoint";"delwp";"delcheckpoint";"deletewaypoint";"deletewp";"deletecheckpoint";};
+		Args = {"name";};
+		Description = "Deletes the waypoint named <name> if it exist";
+		Function = function(plr,args)
+			for i,v in pairs(Variables.Waypoints) do
+				if string.sub(string.lower(i),1,#args[1])==string.lower(args[1]) or string.lower(args[1])=='all' then
+					Variables.Waypoints[i]=nil
+					Functions.Hint('Deleted waypoint '..i,{plr})
+				end
+			end
+		end
+	};
+	
+	Repeat = {
+		Commands = {"repeat";"loop";};
+		Args = {"amount";"interval";"command";};
+		Description = "Repeats <command> for <amount> of times every <interval> seconds; Amount cannot exceed 50";
+		Function = function(plr,args)
+			local amount = tonumber(args[1])
+			local timer = tonumber(args[2])
+			if timer<=0 then timer=0.1 end
+			if amount>50 then amount=50 end
+			local command = args[3]
+			local name = string.lower(plr.Name)
+			assert(command, "Argument #1 needs to be supplied")
+			if string.lower(string.sub(command,1,#Settings.Prefix+string.len("repeat"))) == string.lower(Settings.Prefix.."repeat") or string.sub(command,1,#Settings.Prefix+string.len("loop")) == string.lower(Settings.Prefix.."loop") or string.find(command, "^"..Settings.Prefix.."loop") or string.find(command,"^"..Settings.Prefix.."repeat") then
+				error("Cannot repeat the loop command in a loop command")
+				return
+			end
+
+			Variables.CommandLoops[name..command] = true
+			Functions.Hint("Running "..command.." "..amount.." times every "..timer.." seconds.",{plr})
+			for i = 1,amount do
+				if not Variables.CommandLoops[name..command] then break end
+				Process.Command(plr,command,{Check = false;})
+				wait(timer)
+			end
+			Variables.CommandLoops[name..command] = nil
+		end
+	};
+	
+	Abort = {
+		Commands = {"abort";"stoploop";"unloop";"unrepeat";};
+		Args = {"username";"command";};
+		Description = "Aborts a looped command. Must supply name of player who started the loop or \"me\" if it was you, or \"all\" for all loops. :abort sceleratis :kill bob or :abort all";
+		Function = function(plr,args)
+			local name = string.lower(args[1])
+			if name=="me" then
+				Variables.CommandLoops[string.lower(plr.Name)..args[2]] = nil
+			elseif name=="all" then
+				for i,v in pairs(Variables.CommandLoops) do
+					Variables.CommandLoops[i] = nil
+				end
+			elseif args[2] then
+				Variables.CommandLoops[name..args[2]] = nil
+			end
+		end
+	};
+	
+	AbortAll = {
+		Prefix = Settings.Prefix;
+		Commands = {"abortall";"stoploops";};
+		Args = {};
+		Description = "Aborts all existing command loops";
+		AdminLevel = "Moderators";
+		Function = function(plr,args)
+			local name = 'all'
+
+			if name and name=="me" then
+				for i,v in ipairs(Variables.CommandLoops) do
+					if string.lower(string.sub(i,1,plr.Name)) == string.lower(plr.Name) then
+						Variables.CommandLoops[string.lower(plr.Name)..args[2]] = nil
+					end
+				end
+			elseif name and name=="all" then
+				for i,v in ipairs(Variables.CommandLoops) do
+					Variables.CommandLoops[string.lower(plr.Name)..args[2]] = nil
+				end
+			elseif args[2] then
+				if Variables.CommandLoops[name..args[2]] then
+					Variables.CommandLoops[name..args[2]] = nil
+				else
+					Remote.MakeGui(plr,'Output',{Title = 'Output'; Message = 'No loops relating to your search'})
+				end
+			else
+				for i,v in ipairs(Variables.CommandLoops) do
+					Variables.CommandLoops[i] = nil
+				end
+			end
+		end
+	};
 	
 	}, {__newindex = function(self, index, value)
 		rawset(self, index, value)
@@ -2468,7 +2623,7 @@ do
 	input.FocusLost:Connect(function(enterPressed, inputObject)
 		if enterPressed and inputObject and inputObject.KeyCode == Enum.KeyCode.Return then
 			if input.Text ~= '' and #input.Text > 1 then
-				Process.Command(service.Player, input.Text, {Check = true})
+				Process.Command(service.Player, input.Text, {Check = true}, true)
 			end
 		end
 		main:TweenPosition(UDim2.new(0, 0, 0, -200), "In", "Sine", 0.3, true)

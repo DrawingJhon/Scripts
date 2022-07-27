@@ -4665,7 +4665,7 @@ function checkTT()
 		else
 			Title_3.Text = ''
 		end
-		Tooltip.Visible = true
+		Tooltip.Visible = false
 	else
 		Tooltip.Visible = false
 	end
@@ -6785,7 +6785,11 @@ function sFLY(vfly)
 		
 		for i, v in pairs(dirs) do
 			if (v - mdir).Magnitude <= 1.05 and mdir ~= Vector3.new(0,0,0) then
-				CONTROL[i] = (vfly and vehicleflyspeed or iyflyspeed)
+				if i == "F" or i == "R" then
+					CONTROL[i] = (vfly and vehicleflyspeed or iyflyspeed)
+				else
+					CONTROL[i] = - (vfly and vehicleflyspeed or iyflyspeed)
+				end
 				pcall(function() workspace.CurrentCamera.CameraType = Enum.CameraType.Track end)
 			else
 				CONTROL[i] = 0

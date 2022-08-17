@@ -1,15 +1,13 @@
-------------------------------------------------------------------
---// VOIDACITY'S SCRIPT BUILDER PORTABLE \\--
--- Script made by iDrawingJhon | Credits to Void Community team --
-------------------------------------------------------------------
+script.Parent = nil
 
-local SB_Version = "v3.9";
-
+local isVipServer = game.PrivateServerOwnerId ~= 0;
 local DS_Key = "6F05FAED-6EA6-4E95-9204-123";
-local psKey = "PrivServsrRand0m7qe8";
-local saveKey = "ScIi1221Tfq1bOiLdr";
-local banKey = "ScRiPp0tB0I1derbln2";
-local settingKey = "ScIpTo85IS3Tt1nGs";
+local psKey = "PrivServsrRand0m7ze8";
+local saveKey = "ScIi1221ITfq1bOiLdr";
+local banKey = "ScRiPp0tB01lderbln2";
+local settingKey = "ScIpTo8bIs3Tt1nGs";
+local crossKey = "cR04hisoveRyOrAFezhpufg"
+local requireAllowKey = "ScRipPpBu0ildrReqore7"
 
 local players = game:GetService("Players");
 local network = game:GetService("NetworkServer");
@@ -22,14 +20,15 @@ local replicated = game:GetService("ReplicatedStorage");
 local lighting = game:GetService("Lighting");
 local dataStore = game:GetService("DataStoreService");
 local startergui = game:GetService("StarterGui");
+local starterPlayer = game:GetService("StarterPlayer");
 local tweenService = game:GetService("TweenService");
 local runService = game:GetService("RunService");
 local marketPlace = game:GetService("MarketplaceService");
-local mainData = dataStore:GetDataStore(DS_Key, "dy3BrMu2ieAHZgz@kIXcG&t&q9ru");
+local messaging = game:GetService("MessagingService")
+local globalData = dataStore:GetDataStore(DS_Key, "dy3BrMu2ieApZgz@kIxcG&t&q9ru");
 
-local loadstringEnabled = pcall(loadstring, "");
-local debugMode = false
-local EAenabled = debugMode and true or false;
+startergui.ResetPlayerGuiOnSpawn = false
+starterPlayer.Name = "SB_StarterPlayer"
 
 local Moderators = {
 	[652513366] = "iDrawingJhon",
@@ -37,47 +36,58 @@ local Moderators = {
 	[308254638] = "Robloxmastermanyay",
 	[232005340] = "maikel172"
 }
-local Members = {};
-
-local CrossManager;
 
 local dataBase = {};
 local serverScripts = {};
 local clientScripts = {};
 local scriptEnvs = {};
-local infoEnvs = {};
 local connections = {};
 local serverList = {};
 local requireLogs = {};
 
 local banList = {};
-local gBanList = mainData:GetAsync(banKey) or {};
-local PrivateServers = mainData:GetAsync(psKey) or {};
-local mainParts = {Base = debugMode and workspace:findFirstChild("Base") or nil};
+local gBanList = globalData:GetAsync(banKey) or {};
+local PrivateServers = globalData:GetAsync(psKey) or {};
+local requireAllowList = (globalData:GetAsync(requireAllowKey) or {})
+local mainParts = {Base = workspace.Base};
+local services = {}
 
 local execItems = script["Exec-Items"];
 local guiItems = script["GUI-Items"];
 local getItems = script["Get-Items"];
 local clientManager = script.ClientManager;
 local Library = script.Library;
-Library:Clone().Parent = clientManager;
-Library:Clone().Parent = execItems.Local:findFirstChild("Source").Manager;
 local RbxGui, RbxStamper, RbxUtility = require(Library.RbxGui), require(Library.RbxStamper), require(Library.RbxUtility);
 
 for i, v in pairs(script:GetChildren()) do
 	v.Parent = nil;
 end
 
+for i, v in pairs(game:GetChildren()) do
+	pcall(function()
+		services[v.ClassName] = true
+	end)
+end
+
+for i, v in pairs(game:GetService("Chat"):GetChildren()) do
+	if v.Name ~= "ChatModules" and v.Name ~= "ClientChatModules" and v.Name ~= "ChatLocalization" then
+		v:Destroy()
+	end
+end
+
 local reals = setmetatable({}, {__mode = "k"});
 local proxies = setmetatable({}, {__mode = "v"});
-local sandboxEnabled = loadstringEnabled and true or false; -- this could cause lag if loadstring is not enabled
-local alertIY = true;
+local sandboxEnabled = true;
 local mainEnv = getfenv(0);
 mainEnv.script = nil;
 local mainEnvFunc = setfenv(1, mainEnv);
-local coreLibs = {LoadLibrary=true, table=true, coroutine=true, string=true, math=true, os=true, assert=true, collectgarbage=true, error=true, _G=true, shared=true, gcinfo=true, getfenv=true, getmetatable=true, ipairs=true, loadstring=true, newproxy=true, next=true, pairs=true, pcall=true, ypcall=true, print=true, rawequal=true, rawget=true, rawset=true, select=true, setfenv=true, setmetatable=true, tonumber=true, tostring=true, type=true, unpack=true, _VERSION=true, xpcall=true, require=true, task=true, spawn=true, Spawn=true, delay=true}
+local coreLibs = {LoadLibrary=true, table=true, coroutine=true, string=true, math=true, os=true, assert=true, collectgarbage=true,
+	error=true, _G=true, shared=true, gcinfo=true, getfenv=true, getmetatable=true, ipairs=true, loadstring=true, newproxy=true,
+	next=true, pairs=true, pcall=true, ypcall=true, print=true, rawequal=true, rawget=true, rawset=true, select=true, setfenv=true,
+	setmetatable=true, tonumber=true, tostring=true, type=true, unpack=true, _VERSION=true, xpcall=true, require=true, task=true,
+	spawn=true, Spawn=true, delay=true}
 local isA = game.IsA;
-local proxyObj, newProxyEnv, setupSB, SBInput;
+local proxyObj, newProxyEnv, SBInput;
 
 local _G, game, script, getfenv, setfenv, workspace,
 getmetatable, setmetatable, loadstring, coroutine,
@@ -139,10 +149,6 @@ local function newThread(f, ...)
 	return coroutine.resume(coroutine.create(f), ...)
 end
 
-local function emptyFunction()
-	-- Nothing to see here
-end
-
 local function isInstance(obj)
 	return ({pcall(isA, obj, "Instance")})[1]
 end
@@ -151,14 +157,25 @@ local function toboolean(value)
 	return not not value;
 end
 
-local function WaitForChildOfClass(obj, class)
-	local child = obj:FindFirstChildOfClass(class)
-	
-	while not (child and child.ClassName == class) do
-		child = obj.ChildAdded:Wait()
+local function inSandbox(env)
+	for _, scriptData in pairs(serverScripts) do
+		if scriptData[4] == env then
+			return scriptData[5]
+		end
 	end
 	
-	return child
+	return true
+end
+
+local function WaitForChildOfClass(obj, class)
+	local find = game.findFirstChildOfClass
+	local object = find(obj, class)
+	if not object then
+		repeat task.wait()
+			object = find(obj, class)
+		until object
+	end
+	return object
 end
 
 local function splitStr(str, key)
@@ -192,7 +209,7 @@ end
 
 local function SetGlobalBan(userId, value)
 	rawset(gBanList, tostring(userId), value)
-	mainData:UpdateAsync(banKey, function(tab)
+	globalData:UpdateAsync(banKey, function(tab)
 		local newTab = type(tab) == "table" and tab or {}
 		newTab[tostring(userId)] = value
 		return newTab
@@ -215,16 +232,11 @@ local function getServerType()
 	end
 end
 
-local function checkAllowed(player)
-	local res = Members[player.UserId] or Moderators[player.UserId] or EAenabled
-	return toboolean(res)
-end
-
 local function sendData(player, dtype, data)
 	local player = (type(player) == "userdata") and player or players:findFirstChild(player);
 	if player and player:IsA("Player") then
 		local playerData = dataBase[player.UserId]
-		if playerData and playerData.SB then
+		if playerData then
 			local dataEntry = Instance.new("StringValue")
 			dataEntry.Name = "SB_Output:"..dtype
 			dataEntry.Value = encode(http:JSONEncode(data))
@@ -234,7 +246,7 @@ local function sendData(player, dtype, data)
 end
 
 local function SaveString(player, strKey, str)
-	mainData:UpdateAsync(strKey, function(tab)
+	globalData:UpdateAsync(strKey, function(tab)
 		local saves = type(tab) == "table" and tab or {}
 		saves[tostring(player.UserId)] = str
 		return saves
@@ -242,7 +254,7 @@ local function SaveString(player, strKey, str)
 end
 
 local function LoadString(player, strKey)
-	local saves = mainData:GetAsync(strKey)
+	local saves = globalData:GetAsync(strKey)
 	if type(saves) == "table" then
 		local result = saves[tostring(player.UserId)]
 		return type(result) == "string" and result or ""
@@ -296,7 +308,7 @@ local function getPlayers(player, plyrs, fromDataBase)
 	else
 		playerList = players:GetPlayers();
 	end
-	
+
 	local result = {};
 	if (plyrs == "all") then
 		result = playerList;
@@ -329,17 +341,17 @@ local function newScript(type, owner, name, source)
 	local scriptObj
 	if type == "Script" then
 		scriptObj = execItems.Script:Clone()
-		serverScripts[scriptObj] = {owner, name, source}
 		scriptObj.Disabled = false
+		serverScripts[scriptObj] = {owner, name, source}
 	elseif type == "Local" then
 		scriptObj = execItems.Local:Clone()
 		local remote = scriptObj:findFirstChild("Source")
 		remote.OnServerInvoke = function(plr)
 			return source
 		end
-		
-		clientScripts[scriptObj] = {owner, name}
+
 		scriptObj.Disabled = false
+		clientScripts[scriptObj] = {owner, name}
 	end
 	return scriptObj
 end
@@ -351,8 +363,10 @@ local function disableScript(script)
 				local env = serverScripts[script][4]
 				if connections[env] then
 					for i, conn in pairs(connections[env]) do
-						if typeof(conn) == "RBXScriptConnection" and conn.Connected then
-							conn:Disconnect()
+						if typeof(conn) == "RBXScriptConnection" then
+							if conn.Connected then
+								conn:Disconnect()
+							end
 						end
 					end
 				end
@@ -386,7 +400,7 @@ local customLibrary = {
 		sendData(owner.Name, "Output", {"Warn", table.concat(args, "\t")})
 	end,
 	["newScript,NS"] = function(...)
-		local source, parent = select(1, ...), select(2, ...)
+		local source, parent = ...
 		assert(select("#", ...) ~= 0, "NS: missing argument #1 to 'NS' (string expected)")
 		assert(type(source) == "string", "NS: invalid argument #1 to 'NS' (string expected, got "..typeof(source)..")")
 		assert(select("#", ...) ~= 1, "NS: missing argument #2 to 'NS' (Instance expected)")
@@ -399,7 +413,7 @@ local customLibrary = {
 		return scriptObj
 	end,
 	["newLocalScript,NLS"] = function(...)
-		local source, parent = select(1, ...), select(2, ...)
+		local source, parent = ...
 		assert(select("#", ...) ~= 0, "NLS: missing argument #1 to 'NLS' (string expected)")
 		assert(type(source) == "string", "NLS: invalid argument #1 to 'NLS' (string expected, got "..typeof(source)..")")
 		assert(select("#", ...) ~= 1, "NLS: missing argument #2 to 'NLS' (Instance expected)")
@@ -470,160 +484,37 @@ local customLibrary = {
 		end
 		if not lib then
 			error("Invalid library name")
-		elseif not infoEnvs[getfenv(0)].Proxy then
-			return lib
-		elseif (library:lower() == "rbxutility") then
-			local userdata = newproxy(true);
-			local tab = {};
-			getmetatable(userdata).__index = function(_, index)
-				return (tab[index]);
-			end
-			getmetatable(userdata).__tostring = function()
-				return library
-			end
-			getmetatable(userdata).__metatable = "The metatable is locked"
-			function tab.CreateSignal()
-				local ud = newproxy(true)
-				local this = {};
-				local mBindableEvent = proxyObj(Instance.new("BindableEvent"));
-				local mAllCns = {};
-				function this.connect(self, ...)
-					local func = select(1, ...)
-					if (self ~= ud) then error("Expected ':' not '.' calling member function Connect", 2); end
-					assert(select("#", ...) ~= 0, "missing argument #1 to 'Connect' (function expected)")
-					if (type(func) ~= "function") then
-						error("invalid argument #1 to 'Connect' (function expected, got "..type(func)..")", 2);
-					end
-					local cn = mBindableEvent.Event:Connect(func);
-					mAllCns[cn] = true;
-					local pubCn = {};
-					local ud = newproxy(true)
-					local mt = getmetatable(ud)
-					local function disconnect(self)
-						if self ~= ud then error("Expected ':' not '.' calling member function Disconnect") end
-						cn:disconnect();
-						mAllCns[cn] = nil;
-					end
-					local function connected(self)
-						if self ~= ud then error("Expected ':' not '.' calling member function Connected") end
-						return cn.Connected
-					end
-					pubCn.Connected = connected
-					pubCn.connected = connected
-					pubCn.disconnect = disconnect
-					pubCn.Disconnect = disconnect
-					mt.__index = pubCn
-					mt.__tostring = function(self)
-						return "Connection"
-					end
-					return ud;
-				end
-				function this.disconnect(self)
-					if (self ~= ud) then error("Expected ':' not '.' calling member function Disconnect", 2); end
-					for cn, _ in pairs(mAllCns) do
-						cn:disconnect();
-						mAllCns[cn] = nil;
-					end
-				end
-				function this.wait(self)
-					if (self ~= ud) then error("Expected ':' not '.' calling member function Wait", 2); end
-					return mBindableEvent.Event:wait();
-				end
-				function this.fire(self, ...)
-					if (self ~= ud) then error("Expected ':' not '.' calling member function Fire", 2); end
-					mBindableEvent:Fire(...);
-				end
-				for i, v in pairs(this) do
-					this[i:gsub("^.", string.upper)] = v
-				end
-				local meta = getmetatable(ud)
-				meta.__index = function(self, index)
-					return this[index]
-				end
-				meta.__tostring = function(self)
-					return "RbxUtility Signal"
-				end
-				meta.__metatable = "The metatable is locked"
-				return ud;
-			end
-			local function Create_PrivImpl(objectType)
-				if (type(objectType) ~= "string") then
-					error("Argument of Create must be a string", 2);
-				end
-				return function(dat)
-					dat = (dat or {});
-					local obj = proxyObj(Instance.new(objectType));
-					local ctor = nil;
-					for k, v in pairs(dat) do
-						if (type(k) == "string") then
-							obj[k] = v;
-						elseif (type(k) == "number") then
-							if (type(v) ~= "userdata") then
-								error("Bad entry in Create body: Numeric keys must be paired with children, got a: "..type(v), 2);
-							end
-							v.Parent = obj;
-						elseif (type(k) == "table" and k.__eventname) then
-							if (type(v) ~= "function") then
-								error("Bad entry in Create body: Key `[Create.E\'"..k.__eventname.."\']` must have a function value\
-								       got: "..tostring(v), 2);
-							end
-							obj[k.__eventname]:connect(v);
-						elseif (k == tab.Create) then
-							if (type(v) ~= "function") then
-								error("Bad entry in Create body: Key `[Create]` should be paired with a constructor function, \
-								       got: "..tostring(v), 2);
-							elseif (ctor) then
-								error("Bad entry in Create body: Only one constructor function is allowed", 2);
-							end
-							ctor = v;
-						else
-							error("Bad entry ("..tostring(k).." => "..tostring(v)..") in Create body", 2);
-						end
-					end
-					if (ctor) then
-						ctor(obj);
-					end
-					return obj;
-				end
-			end
-			tab.Create = setmetatable({}, {__call = function(tb, ...) return Create_PrivImpl(...) end});
-			tab.Create.E = function(eventName)
-				return {__eventname = eventName};
-			end
-			return userdata;
 		else
-			local lib = proxyObj(lib)
+			local env = getfenv(0)
+			local dirEnv = newProxyEnv(nil, nil, inSandbox(env))
+			
+			rawset(dirEnv, "script", rawget(env, "script"))
+			rawset(dirEnv, "owner", rawget(env, "owner"))
+			
+			local func = loadstring(lib, library)
+			local tab = setfenv(func, dirEnv)()
+			
 			local userdata = newproxy(true)
 			local meta = getmetatable(userdata)
+			
 			meta.__index = function(self, index)
-				return lib[index]
+				return (tab[index]);
 			end
-			meta.__tostring = function(self)
+			meta.__tostring = function()
 				return library
 			end
 			meta.__metatable = "The metatable is locked"
+			
 			return userdata
 		end
 	end,
-	["require"] = function(obj)
-		local tab = {};
-		local success, err = pcall(function()
-			(function(...)
-				tab = {n = select("#", ...), ...}
-			end)(require(reals[obj] or obj));
-		end)
-		local owner = scriptEnvs[getfenv(0)];
-		
-		newThread(function()
-			local id = tonumber(obj) or nil;
-			if (success or not err:match("Downloading asset failed")) and id then
-				table.insert(requireLogs, {AssetId = id, Username = owner.Name, UserId = owner.UserId, Timestamp = tick()});
-			end
-		end)
-		if success then
-			return unpack(tab, 1, tab.n)
+	require = function(obj)
+		local userId = scriptEnvs[getfenv(0)].userId
+		local playerData = dataBase[userId]
+		if (isVipServer or playerData.Mod or requireAllowList[tostring(userId)]) then
+			return require(reals[obj] or obj)
 		else
-			error(err, 0)
+			error("require can only be used in a VIP server or the second place of the script builder.")
 		end
 	end,
 	_G = setmetatable({}, {__metatable = "The metatable is locked."}),
@@ -660,172 +551,168 @@ local customProperties = {
 	end,
 	["onread:Instance:Remove,remove"] = function(self, ...)
 		if not isInstance(self) then error("Expected ':' not '.' calling member function Remove") end
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			if self.ClassName == "Player" then
-				error("Player is locked")
-			end
-			if self.ClassName == "PlayerGui" then
-				error("PlayerGui is locked")
-			end
-			if self.ClassName == "Backpack" then
-				error("Backpack is locked")
-			end
+		if self.ClassName == "Player" then
+			error("Player is locked")
 		end
-		return self:Remove(...)
+		if self.ClassName == "PlayerGui" then
+			error("PlayerGui is locked")
+		end
+		if self.ClassName == "Backpack" then
+			error("Backpack is locked")
+		end
+		return self:Remove()
 	end,
 	["onread:Instance:Destroy,destroy"] = function(self, ...)
 		if not isInstance(self) then error("Expected ':' not '.' calling member function Destroy") end
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			if self.ClassName == "Player" then
-				error("Player is locked")
-			end
-			if self.ClassName == "PlayerGui" then
-				error("PlayerGui is locked")
-			end
-			if self.ClassName == "Backpack" then
-				error("Backpack is locked")
-			end
+		if self.ClassName == "Player" then
+			error("Player is locked")
 		end
-		return self:Destroy(...)
+		if self.ClassName == "PlayerGui" then
+			error("PlayerGui is locked")
+		end
+		if self.ClassName == "Backpack" then
+			error("Backpack is locked")
+		end
+		return self:Destroy()
 	end,
 	["onread:Instance:ClearAllChildren,clearAllChildren"] = function(self, ...)
 		if not isInstance(self) then error("Expected ':' not '.' calling member function ClearAllChildren") end
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			if self.ClassName == "Players" then
-				error("Player is locked")
-			end
-			if self.ClassName == "Player" then
-				error("Cannot ClearAllChildren Player")
-			end
-			if self.ClassName == "PlayerGui" and self.Parent ~= owner then
-				error("Cannot ClearAllChildren PlayerGui")
-			end
+		if self.ClassName == "Players" then
+			error("Player is locked")
 		end
-		return self:ClearAllChildren(...)
+		if self.ClassName == "Player" then
+			error("Cannot ClearAllChildren Player")
+		end
+		if self.ClassName == "PlayerGui" then
+			error("Cannot ClearAllChildren PlayerGui")
+		end
+		if self.ClassName == "Chat" then
+			error("Cannot ClearAllChildren Chat")
+		end
+		if self.ClassName == "ReplicatedStorage" then
+			error("Cannot ClearAllChildren ReplicatedStorage")
+		end
+		return self:ClearAllChildren()
 	end,
 	["onread:Player:Kick,kick"] = function(self, ...)
 		if not isInstance(self) or self.ClassName ~= "Player" then error("Expected ':' not '.' calling member function Kick") end
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			error("Player is locked")
-		else
-			return self:Kick(...)
-		end
+		error("Player is locked")
 	end,
 	["onedit:Player:Parent"] = function(self, val)
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			error("Player is locked")
-		end
-		self.Parent = val
+		error("Player is locked")
 	end,
 	["onread:Debris:AddItem,addItem"] = function(self, ...)
 		if (not isInstance(self) or self.ClassName ~= "Debris") then error("Expected ':' not '.' calling member function AddItem"); end
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			local obj = select(1, ...)
-			if isInstance(obj) then
-				if obj.ClassName == "Player" then
-					error("Player is locked")
-				end
-				if obj.ClassName == "PlayerGui" then
-					error("PlayerGui is locked")
-				end
-				if obj.ClassName == "Backpack" then
-					error("Backpack is locked")
-				end
+		local obj = select(1, ...)
+		if isInstance(obj) then
+			if obj.ClassName == "Player" then
+				error("Player is locked")
+			end
+			if obj.ClassName == "PlayerGui" then
+				error("PlayerGui is locked")
+			end
+			if obj.ClassName == "Backpack" then
+				error("Backpack is locked")
 			end
 		end
 		return self:AddItem(...)
 	end,
+	-- InsertService
+	["onread:InsertService:LoadAssetVersion,loadAssetVersion"] = function(self, id)
+		if (not isInstance(self) or self.ClassName ~= "InsertService") then error("Expected ':' not '.' calling member function LoadAssetVersion"); end
+		error("LoadAssetVersion is forbidden to use");
+	end,
+	["onread:InsertService:LoadAsset,loadAsset"] = function(self, id)
+		if (not isInstance(self) or self.ClassName ~= "InsertService") then error("Expected ':' not '.' calling member function LoadAsset"); end
+		error("LoadAsset is locked")
+	end,
+	-- ScriptContext
+	["onedit:ScriptContext:ScriptsDisabled,scriptsDisabled"] = function(self, value)
+		error("ScriptsDisabled is locked");
+	end, 
+	["onread:ScriptContext:Error,error"] = function(self)
+		error("Error is locked");
+	end,
+	-- LogService
+	["onread:LogService:MessageOut,messageOut"] = function(self)
+		error("MessageOut is locked");
+	end, 
+	["onread:LogService:GetLogHistory getLogHistory"] = function(self)
+		error("GetLogHistory is locked");
+	end,
 	["onread:TeleportService:Teleport,teleport"] = function(self, ...)
 		if not isInstance(self) or self.ClassName ~= "TeleportService" then error("Expected ':' not '.' calling member function Teleport") end
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			error("Teleporting is blocked")
-		else
-			return self:Teleport(...)
-		end
+		error("Teleporting is blocked")
 	end,
+	-- StarterGui
+	["onedit:StarterGui:ResetPlayerGuiOnSpawn,resetPlayerGuiOnSpawn"] = function()
+		error("ResetPlayerGuiOnSpawn is locked");
+	end,
+	-- PointsService
+	["onread:PointsService:AwardPoints,awardPoints"] = function()
+		error("awarding points is blocked -- good try but NOPE");
+	end,
+	-- TeleportService
 	["onread:TeleportService:TeleportToPlaceInstance,teleportToPlaceInstance"] = function(self, ...)
 		if not isInstance(self) or self.ClassName ~= "TeleportService" then error("Expected ':' not '.' calling member function TeleportToPlaceInstance") end
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			error("Teleporting is blocked")
-		else
-			return self:TeleportToPlaceInstance(...)
-		end
+		error("Teleporting is blocked")
 	end,
 	["onread:TeleportService:TeleportToSpawnByName,teleportToSpawnByName"] = function(self, ...)
 		if not isInstance(self) or self.ClassName ~= "TeleportService" then error("Expected ':' not '.' calling member function TeleportToSpawnByName") end
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			error("Teleport is blocked")
-		else
-			return self:TeleportToSpawnByName(...)
-		end
+		error("Teleporting is blocked")
 	end,
 	["onread:TeleportService:TeleportAsync,teleportAsync"] = function(self, ...)
 		if not isInstance(self) or self.ClassName ~= "TeleportService" then error("Expected ':' not '.' calling member function TeleportAsync") end
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			error("Teleporting is blocked")
-		else
-			return self:TeleportAsync(...)
-		end
+		error("Teleporting is blocked")
 	end,
+	-- RemoteFunction
 	["onread:RemoteFunction:InvokeClient,invokeClient"] = function(self, ...)
 		if (not isInstance(self) or self.ClassName ~= "RemoteFunction") then error("Expected ':' not '.' calling member function InvokeClient"); end
 		local player = select(1, ...)
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			local args = {...};
-			for i = 1, select("#",...) do
-				local arg = args[i];
-				if (type(arg) == "string" and #arg > 2e5) then
-					error("You tried to disconnect " .. tostring(player));
-				elseif (type(arg) == "table" and #http:JSONEncode(arg) > 2e5) then
-					error("You tried to disconnect " .. tostring(player));
-				end
+		local args = {...};
+		for i = 1, select("#",...) do
+			local arg = args[i];
+			if (type(arg) == "string" and #arg > 2e5) then
+				error("You tried to disconnect " .. tostring(player));
+			elseif (type(arg) == "table" and #http:JSONEncode(arg) > 2e5) then
+				error("You tried to disconnect " .. tostring(player));
 			end
 		end
-		return self:InvokeClient(...);
+		return self:InvokeClient(...)
 	end,
 	-- RemoteEvent
 	["onread:RemoteEvent:FireClient,fireClient"] = function(self, ...)
 		if (not isInstance(self) or self.ClassName ~= "RemoteEvent") then error("Expected ':' not '.' calling member function FireClient"); end
 		local player = select(1, ...)
 		local player = isInstance(player) and player.ClassName == "Player" and player
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			local args = {...};
-			for i = 1, select("#",...) do
-				local arg = args[i];
-				if (type(arg) == "string" and #arg > 2e5 and player) then
-					error("You tried to disconnect " .. tostring(player));
-				elseif (type(arg) == "table" and #http:JSONEncode(arg) > 2e5 and player) then
-					error("You tried to disconnect " .. tostring(player));
-				end
+		local args = {...};
+		for i = 1, select("#",...) do
+			local arg = args[i];
+			if (type(arg) == "string" and #arg > 2e5 and player) then
+				error("You tried to disconnect " .. tostring(player));
+			elseif (type(arg) == "table" and #http:JSONEncode(arg) > 2e5 and player) then
+				error("You tried to disconnect " .. tostring(player));
 			end
 		end
-		return self:FireClient(...);
+		return self:FireClient(...)
 	end,
+	-- PlayerGui
 	["onedit:PlayerGui:Parent"] = function(self, parent)
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			error("PlayerGui is locked")
-		end
-		self.Parent = parent
+		error("PlayerGui is locked")
+	end,
+	-- Players
+	["onread:Players:CharacterAutoLoads,characterAutoLoads"] = function(self, ...)
+		error("CharacterAutoLoads is locked");
 	end,
 	["onedit:PlayerGui:Name"] = function(self, name)
-		local owner = scriptEnvs[getfenv(0)]
-		if not dataBase[owner.userId].Mod then
-			error("PlayerGui is locked")
+		error("PlayerGui is locked")
+	end,
+	["onedit:Instance:Name"] = function(self, name)
+		if services[self.ClassName] then
+			error("You cannot rename services")
+		else
+			self.Name = name
 		end
-		self.Name = name
 	end
 }
 
@@ -863,6 +750,11 @@ function proxyObj(obj)
 	end
 	local typ = type(obj);
 	if (typ == "userdata") then
+		if isInstance(obj) and (obj:IsDescendantOf(players) and obj:GetFullName():match("SB_")) or (obj == globalData) then
+			local hidden = Instance.new("Model")
+			hidden.Name = "---"
+			return proxyObj(hidden)
+		end
 		local userdata = newproxy(true);
 		local meta = getmetatable(userdata);
 		if (isInstance(obj)) then
@@ -947,7 +839,7 @@ function proxyObj(obj)
 		local function func(...)
 			if scriptEnvs[getfenv(0)] then
 				return (function(...)
-					local fv = select(1, ...)
+					local fv = ...
 					if typeof(fv) == "RBXScriptConnection" and connections[getfenv(0)] then
 						table.insert(connections[getfenv(0)], fv)
 					end
@@ -1015,11 +907,11 @@ function proxyObj(obj)
 				return proxyObj(#obj);
 			end
 			meta.__metatable = "The metatable is locked (from ox-side)";
-			setmetatable(tab, meta);		
+			setmetatable(tab, meta);
 		elseif table.isfrozen(obj) then
 			table.freeze(tab)
 		end
-		reals[tab], proxies[obj] = obj, tab;
+		reals[tab], proxies[obj] = obj, tab
 		return tab;
 	else
 		return obj;
@@ -1093,7 +985,7 @@ local errorSignal;
 local function scriptError(error, stack, script)
 	newThread(function()
 		if (serverScripts[script]) then
-			local owner, name, source, env, fullName = unpack(serverScripts[script])
+			local owner, name = unpack(serverScripts[script])
 			local editedStack = "\n"
 			for i, line in ipairs(splitStr(string.sub(stack, 1, -2), "\n")) do
 				local source, errLine = string.match(line, "(.+), (.+)")
@@ -1111,14 +1003,13 @@ setmetatable(shared, {
 	__call = function(self, script)
 		if serverScripts[script] and not serverScripts[script][4] then
 			local owner, name, source = unpack(serverScripts[script])
-			local env = newProxyEnv(script, owner, sandboxEnabled)
-			serverScripts[script][4] = env
-			serverScripts[script][5] = script:GetFullName()
-			scriptEnvs[env] = owner
+			local env = newProxyEnv(script, owner, sandboxEnabled)			
 			connections[env] = {}
-			infoEnvs[env] = {Script = script, Proxy = sandboxEnabled}
 			setfenv(0, env);
 			setfenv(2, env);
+			scriptEnvs[env] = owner
+			serverScripts[script][4] = env
+			serverScripts[script][5] = sandboxEnabled
 			sendData(owner, "Output", {"Run", "Running ("..name..")"})
 			if (not errorSignal.connected) then
 				errorSignal = context.Error:Connect(scriptError);
@@ -1515,9 +1406,6 @@ commands = {
 		else
 			sendData(player, "Output", {"Error", "(" .. (name or "") .. ") doesn't exist / not allowed to share"})
 		end
-	end,
-	["uezvbjswjuyffosjwtombdznjahcqiba"] = function()
-		
 	end
 }
 
@@ -1563,7 +1451,7 @@ getCommands = {
 			for i, child in pairs(obj:GetChildren()) do
 				if not (serverScripts[child] or players:GetPlayerFromCharacter(child)) then
 					if not table.find(ignoreList, child) then
-						child:Destroy()
+						pcall(child.Destroy, child)
 					end
 				end
 			end
@@ -1593,7 +1481,7 @@ getCommands = {
 		base.Color = Color3.fromRGB(30, 128, 29)
 		base.Size = Vector3.new(700, 1.2, 700)
 		base.CFrame = CFrame.new(0, -0.6, 0)
-		
+
 		mainParts.Base = base
 		base.Parent = workspace
 		sendData(player, "Output", {"Note", "Got base"})
@@ -1822,8 +1710,11 @@ getCommands = {
 	end,
 	["noguis, nog, ng"] = function(player)
 		if player:findFirstChildOfClass("PlayerGui") then
+			local dataTransfer = dataBase[player.userId].dataTransfer
 			for _, gui in pairs(player:findFirstChildOfClass("PlayerGui"):GetChildren()) do
-				gui:Destroy()
+				if (gui ~= dataTransfer) then
+					gui:Destroy()
+				end
 			end
 		end
 		sendData(player, "Output", {"Note", "Got no guis"})
@@ -1859,14 +1750,14 @@ getCommands = {
 	end,
 	["ps, pri"] = function(player, key)
 		if type(PrivateServers) ~= "table" then
-			mainData:SetAsync(psKey, {})
+			globalData:SetAsync(psKey, {})
 		end
-		PrivateServers = mainData:GetAsync(psKey) or {}
+		PrivateServers = globalData:GetAsync(psKey) or {}
 		local code = PrivateServers[key] or (function()
 			sendData(player, "Output", {"Warn", "Server does not exist, creating..."})
 			local newCode = teleport:ReserveServer(game.PlaceId)
 			PrivateServers[key] = newCode
-			mainData:UpdateAsync(psKey, function(tab)
+			globalData:UpdateAsync(psKey, function(tab)
 				local newTab = type(tab) == "table" and tab or {}
 				newTab[key] = newCode
 				return newTab
@@ -1947,7 +1838,7 @@ getCommands = {
 		for cmd in pairs(getCommands) do
 			sendData(player, "Output", {"Print", "get/"..cmd})
 		end
-		sendData(player, "Output", {isMod and "Note" or "Error", "Mod commands"})
+		sendData(player, "Output", {"Error", "Mod commands"})
 		runService.Heartbeat:wait()
 		for cmd in pairs(modCommands) do
 			sendData(player, "Output", {"Print", "sb/"..cmd})
@@ -2018,28 +1909,6 @@ getCommands = {
 		end
 		sendData(player, "Output", {"Note", "Got moderators"})
 	end,
-	["members, memberlist"] = function(player)
-		for userId, name in pairs(Members) do
-			sendData(player, "Output", {"Print", name.." ("..userId..")"})
-		end
-		sendData(player, "Output", {"Note", "Got members"})
-	end,
-	["exit"] = function(player, result, cmdBar)
-		local playerData = dataBase[player.UserId]
-		if not cmdBar then
-			sendData(player, "Output", {"Error", "g/exit is not accessible from the chat, use the command bar."})
-			return
-		end
-		if playerData.Mod then
-			sendData(player, "Output", {"Error", "You cannot remove your output, you are a moderator!"})
-			return
-		end
-		sendData(player, "Output", {"Note", "Accept the closure request to remove yourself from members"})
-		playerData:Close()
-	end,
-	["version"] = function(player)
-		sendData(player, "Output", {"Note", "VSB: "..tostring(SB_Version).." - Updated and compatible by DrawingJhon"})
-	end,
 	["gamelist, games, servers"] = function(player, result)
 		local gameList = guiItems.SB_GameList:Clone()
 		local main = gameList.Frame
@@ -2053,27 +1922,22 @@ getCommands = {
 			gameList:Destroy()
 		end)
 
-		local lastTransfered
 		local canvasSize = 0
-		local currentCode = 0
+		
 		local function updateList()
-			local code = math.random()
-			currentCode = code
-			if lastTransfered then
-				lastTransfered:Stop()
-			end
 			canvasSize = 0
+			
 			scroll:ClearAllChildren()
 			Instance.new("UIListLayout", scroll).Padding = UDim.new(0, 5)
-			lastTransfered = CrossManager.TransferFunctionData(function(jobId, data)
-				if code ~= currentCode then return end
+			
+			for jobId, data in pairs(serverList) do
 				local def = default:Clone()
 				local expand = def.Expand
 				local body = def.Body
 				local join = def.Join
 
 				local opened = false
-				
+
 				canvasSize += 30
 
 				expand.MouseButton1Click:Connect(function()
@@ -2097,7 +1961,7 @@ getCommands = {
 						teleport:TeleportToPlaceInstance(game.PlaceId, jobId, player)
 					end
 				end)
-				
+
 				if data.IsStudio then
 					expand.Text = expand.Text.."[ROBLOX STUDIO]"
 					join.Visible = false
@@ -2122,12 +1986,12 @@ getCommands = {
 				body.TextTransparency = 1
 				join.TextTransparency = 1
 				def.Parent = scroll
-			end)
+			end
 		end
 
 		refresh.MouseButton1Down:Connect(updateList)
 		newThread(updateList)
-		gameList.Parent = WaitForChildOfClass(player, "PlayerGui")
+		gameList.Parent = player:findFirstChildOfClass("PlayerGui")
 		
 		newThread(function()
 			while gameList.Parent do
@@ -2135,7 +1999,13 @@ getCommands = {
 				wait()
 			end
 		end)
-	end
+	end,
+	["requirelist, rl, requireallowlist"] = function(player)
+		for userId, name in pairs(requireAllowList) do
+			sendData(player, "Output", {"Print", name .. " (" .. userId .. ")"});
+		end
+		sendData(player, "Output", {"Note", "Got require allowed list"})		
+	end,
 }
 
 modCommands = {
@@ -2199,9 +2069,9 @@ modCommands = {
 		if (not success) then 
 			return sendData(player, "Output", {"Error", "Error player not found"}); 
 		end
-		if gBanList[tostring(userId)] then
-			return sendData(player, "Output", {"Error", toBan.." is already Game Banned"})
-		end
+		--if gBanList[tostring(userId)] then
+		--	return sendData(player, "Output", {"Error", toBan.." is already Game Banned"})
+		--end
 		if Moderators[userId] then
 			return sendData(player, "Output", {"Error", "You cannot ban a mod silly"})
 		end
@@ -2272,38 +2142,6 @@ modCommands = {
 		plyr:Kick(reason)
 		sendData(player, "Output", {"Note", "Kicked "..plyr.Name})
 	end,
-	["give"] = function(player, plyr)
-		local toPlr = getPlayers(player, plyr)[1]
-		if not toPlr then
-			return sendData(player, "Output", {"Error", "Player not found"})
-		end
-		for _, toPlr in pairs(getPlayers(player, plyr)) do
-			if Members[toPlr.UserId] or Moderators[toPlr.UserId] then
-				sendData(player, "Output", {"Error", toPlr.Name.." has already the script builder"})
-			else
-				Members[toPlr.UserId] = toPlr.Name
-				if not dataBase[toPlr.UserId].SB then
-					setupSB(toPlr)
-				end
-				sendData(player, "Output", {"Note", "You gave the script builder to "..toPlr.Name})
-			end
-		end
-	end,
-	["remove"] = function(player, plyr)
-		local found = false
-		for userId, name in pairs(Members) do
-			if plyr == "all" or name:sub(1,#plyr):lower() == plyr:lower() then
-				found = true
-				local playerData = dataBase[userId]
-				Members[userId] = nil
-				playerData:Close(true)
-				sendData(player, "Output", {"Note", "You have removed the script builder from "..name})
-			end
-		end
-		if not found then
-			sendData(player, "Output", {"Error", plyr.." hasn't the script builder"})
-		end
-	end,
 	["sandbox"] = function(player, bool)
 		local yes = {"yes", "true", "on"}
 		local no = {"no", "false", "off"}
@@ -2327,7 +2165,7 @@ modCommands = {
 			end
 			sendData(player, "Output", {"Print", data.AssetId.." - By: "..data.Username.." ("..data.UserId..") - At: "..getFormattedTime(data.Timestamp)})
 		end
-		
+
 		if not name or name == "" or name == "all" then
 			for i, data in pairs(requireLogs) do
 				send(data)
@@ -2347,17 +2185,6 @@ modCommands = {
 			end
 		end
 		sendData(player, "Output", {"Note", "Got require logs"})
-	end,
-	["warnIY"] = function(player, bool)
-		local yes = {"yes", "true", "on"}
-		local no = {"no", "false", "off"}
-		if table.find(yes, bool) then
-			alertIY = true
-			sendData(player, "Output", {"Note", "The infinite yield warnings has been enabled"})
-		elseif table.find(no, bool) then
-			alertIY = false
-			sendData(player, "Output", {"Note", "The infinite yield warnings has been disabled"})
-		end
 	end,
 	["isbanned, isBanned"] = function(player, plyr)
 		local success, userId = pcall(function() return players:GetUserIdFromNameAsync(plyr); end)
@@ -2385,30 +2212,27 @@ modCommands = {
 			sendData(player, "Output", {"Note", tostring(plyr).. " is not banned from server/game"})
 		end
 	end,
-	["enableEA, EA"] = function(player)
-		if EAenabled then
-			return sendData(player, "Output", {"Warn", "SB Early Access is already enabled"})
+	["allowrequire, allowr"] = function(player, name)
+		local plyr = getPlayers(player, name)[1]
+		if (plyr) then
+			requireAllowList[tostring(plyr.UserId)] = plyr.Name
+			globalData:SetAsync(requireAllowKey, requireAllowList);
+			sendData(player, "Output", {"Note", "Allowed require "..plyr.Name});
+		else
+			sendData(player, "Output", {"Error", "Player not found"});
 		end
-		for i, plyr in pairs(players:GetPlayers()) do
-			if dataBase[plyr.UserId] and not dataBase[plyr.UserId].SB then
-				newThread(setupSB, plyr)
+	end,
+	["unallowrequire, unallowr"] = function(player, name)
+		for userId, plyrName in pairs(requireAllowList) do
+			if (string.find(string.lower(plyrName), string.lower(name), 1, true) == 1) then
+				requireAllowList[userId] = nil
+				globalData:SetAsync(requireAllowKey, requireAllowList)
+				sendData(player, "Output", {"Note", "Unallow require "..plyrName});
+				return;
 			end
 		end
-		EAenabled = true
-		return sendData(player, "Output", {"Note", "SB Early Access is now actived"})
+		sendData(player, "Output", {"Error", name.." not found"});
 	end,
-	["disableEA, unEA"] = function(player)
-		EAenabled = false
-		for i, v in pairs(players:GetPlayers()) do
-			if not Members[v.UserId] and not Moderators[v.UserId] then
-				dataBase[v.UserId]:Close(true)
-			end
-		end
-		return sendData(player, "Output", {"Note", "Disabled SB Early Access"})
-	end,
-	["isEAenabled"] = function(player)
-		sendData(player, "Output", {"Note", "Early Access is currently "..(EAenabled and "actived" or "closed")})
-	end
 }
 
 function SBInput(player, text, commandBar)
@@ -2434,32 +2258,10 @@ function SBInput(player, text, commandBar)
 end
 
 newThread(function()
-	--// Infinite Yield Checker
-	local alPlr
-	while true do
-		for _, player in pairs(players:GetPlayers()) do
-			local gui = player:findFirstChildOfClass("PlayerGui")
-			if gui and gui:findFirstChild("IY_GUI") and gui.IY_GUI:IsA("ScreenGui") and alPlr ~= player and not Moderators[player.userId] and alertIY then
-				alPlr = player
-				for i, plyr in pairs(players:GetPlayers()) do
-					if plyr ~= player then
-						sendData(plyr, "Output", {"Warn", "[Warning] "..player.Name.." is using Infinite Yield"})
-					end
-				end
-			end
-		end
-		if alPlr then
-			wait(2)
-		else
-			task.wait()
-		end
-	end
-end)
-
-newThread(function()
 	--// CheckBan System
 	while true do
-		gBanList = mainData:GetAsync(banKey) or {}
+		gBanList = (globalData:GetAsync(banKey) or {});
+		requireAllowList = (globalData:GetAsync(requireAllowKey) or {});
 		for _, plyr in ipairs(players:GetPlayers()) do
 			local banData = dataBase[plyr.UserId] and not dataBase[plyr.UserId].Mod and gBanList[tostring(plyr.UserId)]
 			if (banData) then
@@ -2472,208 +2274,110 @@ end)
 
 newThread(function()
 	--// CrossServer System
-	local main = {}
-	local msgService = game:GetService("MessagingService")
-	local crossKey = "cR04hisoveReyOrAFezheuofgeIU311"
-
-	local Transfers = {}
-
-	main.GetPlayers = function()
-		local t = {}
-		for i, v in pairs(players:GetPlayers()) do
-			table.insert(t, v.Name)
+	
+	local closing = false
+	
+	local function messageReceived(message)
+		local status, jobId, serverData = unpack(message.Data)
+		
+		if status == "Update" then
+			serverList[jobId] = serverData
+		elseif status == "Closed" then
+			serverList[jobId] = nil
 		end
-		return t
 	end
-
-	main.Send = function(typ, ...)
-		msgService:PublishAsync(crossKey, {Type = typ; Args = {...}})
+	
+	local function getNamePlayers()
+		local list = {}
+		for i, v in pairs(players:GetPlayers()) do
+			table.insert(list, v.Name)
+		end
+		return list
 	end
-
-	main.GetInfo = function()
-		return game.JobId, main.GetPlayers(), workspace:GetRealPhysicsFPS(), getServerType(), runService:IsStudio()
+	
+	local function publish(status, data)
+		messaging:PublishAsync(crossKey, {status, game.JobId, data})
 	end
-
-	main.CrossFunctions = {
-		ReturnData = function(code)
-			main.Send('OnResponse', code, main.GetInfo())
-		end;
-		OnResponse = function(code, jobId, players, fps, serverType, isStudio)
-			local data = Transfers[code]
-			if data and not data.Cache[jobId] then
-				data.Cache[jobId] = true
-				newThread(data.Function, jobId, {Players = players; FPS = fps; ServerType = serverType; IsStudio = isStudio})
-			end
-		end;	
-	}
-
-	main.TransferFunctionData = function(func)
-		local code; repeat code = tostring(math.random()) until not Transfers[code]
-		local info = {
-			Cache = {};
-			Function = func;
-			Stop = function() Transfers[code] = nil end;
-		}
-		Transfers[code] = info
-		main.Send('ReturnData', code)
-		return info
-	end
-
-	local subSuccess, subConn = Pcall(function()
-		return msgService:SubscribeAsync(crossKey, function(message)
-			local data = message.Data
-			local typeDat, args = data.Type, data.Args
-
-			if typeDat and main.CrossFunctions[typeDat] and type(args) == "table" then
-				main.CrossFunctions[typeDat](unpack(args))
-			end
-		end)
+	
+	messaging:SubscribeAsync(crossKey, messageReceived)
+	
+	game:BindToClose(function()
+		closing = true
+		publish("Closed")
 	end)
-
-	CrossManager = main
+	
+	while not closing do
+		for jobId, data in pairs(serverList) do
+			if data.Timestamp and type(data.Timestamp) == "number" then
+				if os.time() - data.Timestamp > 10 then
+					serverList[jobId] = nil
+				end
+			end
+		end
+		
+		local serverData = {
+			Players = getNamePlayers(),
+			FPS = workspace:GetRealPhysicsFPS(),
+			ServerType = getServerType(),
+			IsStudio = runService:IsStudio(),
+			Timestamp = os.time()
+		}
+		
+		publish("Update", serverData)
+		wait(5)
+	end
 end)
 
 guiItems.SB_OutputGUI.Oof.Text = "Place1 ("..tostring(getServerType())..")"
 
-function setupSB(player)
-	local playerData = dataBase[player.UserId]
-	playerData.SB = true
-	
-	local isClosed = false
-	
-	--Data Transfer
-	local dataTransfer = Instance.new("Model")
-	dataTransfer.Name = "SB_DataTransfer"
-	local handleScripts = Instance.new("RemoteFunction", dataTransfer)
-	handleScripts.Name = "SB_HandleScripts"
-	handleScripts.OnServerInvoke = function(plr, type, source, parent)
-		if plr ~= player or isClosed then return end
-		if source and parent then
-			local name = type == "Local" and "NLS" or "NS"
-			local scriptObj = newScript(type, plr, name.." - "..parent:GetFullName(), decode(source))
-			scriptObj.Name = name
-			scriptObj.Parent = parent
-			return scriptObj
-		end
-	end
-	local getLocalOwner = Instance.new("RemoteFunction", dataTransfer)
-	getLocalOwner.Name ="SB_GetLocalOwner"
-	getLocalOwner.OnServerInvoke = function(plr, script)
-		if not isClosed then
-			return unpack(clientScripts[script] or {})
-		end
-	end
-	local commandRemote = Instance.new("RemoteFunction", dataTransfer)
-	commandRemote.Name = "SB_ReplicatorRemote"
-	local numInput = 0
-	commandRemote.OnServerInvoke = function(plr, num, act, arg1, arg2)
-		if plr ~= player or isClosed then return end
-		if num == numInput or num == (numInput + 1) then
-			numInput = num
-			if act == "Execute" then
-				if type(arg1) == "string" and arg1 ~= "" then
-					newThread(Pcall, SBInput, plr, "/e "..arg1, true)
-				end
-			elseif act == "PlayerData" then
-				return dataBase[plr.userId]
-			end
-		end
-	end
-	local userSettings = Instance.new("RemoteFunction", dataTransfer)
-	userSettings.Name = "SB_UserSettings"
-	userSettings.OnServerInvoke = function(plr, typ, data)
-		if plr ~= player or isClosed then return end
-		while not playerData.UserSettings do task.wait() end
-		if typ == "Get" then
-			return playerData.UserSettings
-		elseif typ == "Set" and (data.Sent == numInput or data.Sent == numInput + 1) then
-			playerData.UserSettings[data.Setting] = data.Value
-			newThread(function()
-				userSettings:InvokeClient(player, "SettingChanged", data.Setting, data.Value)
-			end)
-		end
-	end
-	playerData.dataTransfer = dataTransfer
-	dataTransfer.Parent = player
-
-	local ChatConnection = player.Chatted:Connect(function(msg)
-		Pcall(SBInput, player, msg)
-	end)
-
-	local ticket = math.random(-2e5, 2e5)
-	if not playerData.Mod then
-		playerData.Close = function(_, forced)
-			local data = {
-				Ticket = ticket;
-				IsForced = forced;
-				Sent = numInput;
-			}
-			local rData = handleScripts:InvokeClient(player, encode("ClosureRequest"), data)
-			if type(rData) == "table" and (rData.Sent == numInput or rData.Sent == numInput + 1) and rData.Ticket == (ticket * 2) and rData.Response == encode("AcceptedRequest") and not isClosed then
-				isClosed = true
-				playerData.Close = emptyFunction
-				Members[player.UserId] = nil
-				
-				ChatConnection:Disconnect()
-				
-				dataTransfer:Destroy()
-				getLocalOwner:Destroy()
-				commandRemote:Destroy()
-				userSettings:Destroy()
-				
-				SBInput(player, "g/ns")
-				playerData.SB = false
-				
-				local val = Instance.new("StringValue")
-				val.Name = "SB_Exit: "..player.UserId
-				val.Value = encode(tostring(player.UserId + game.PlaceId))
-				val.Parent = player
-				
-				if player:findFirstChild("SB_OutputGUI") then
-					player.SB_OutputGUI:Destroy()
-				end
-			end
-		end
-	end
-
-	local PlayerGui = WaitForChildOfClass(player, "PlayerGui")
-	clientManager:Clone().Parent = PlayerGui
-	guiItems.SB_OutputGUI:Clone().Parent = player
-	guiItems.SB_OutputGUIscript:Clone().Parent = PlayerGui
-end
-
 playerAdded(function(player)
-	local userId = tostring(player.UserId)
-	local banData = banList[userId]
-	local gBanData = gBanList[userId]
-	local banned = false
-	
-	if (gBanData) then
-		local timeLeftInDays = gBanData.Duration-math.floor((os.time()-gBanData.Timestamp)/86400)
-		if (timeLeftInDays <= 0 or Moderators[player.UserId]) then
-			newThread(RemoveGlobalBan, userId)
-		else
-			player:Kick("Banned by: "..gBanData.BannedBy.." - Ban type: Game - Days left: "..timeLeftInDays.." - Reason: "..gBanData.Reason)
+	if (not isVipServer) then
+		if (player.AccountAge < 10 and player.UserId > 0) then
+			player:Kick("Your account needs to be at least 10 days old to join")
+			
+			for i, plyr in pairs(players:GetPlayers()) do
+				if (plyr ~= player) then
+					sendData(plyr, "Output", {"Note", player.Name.." has been kicked for being less than 10 days old!"})
+				end
+			end
+			return;
+		end
+		
+		local banData = banList[tostring(player.UserId)]
+		local gBanData = gBanList[tostring(player.UserId)]
+		local banned = false
+		if (gBanData) then
+			local timeLeftInDays = gBanData.Duration-math.floor((os.time()-gBanData.Timestamp)/86400)
+			if (timeLeftInDays <= 0 or Moderators[player.UserId]) then
+				newThread(RemoveGlobalBan, tostring(player.UserId))
+			else
+				player:Kick("Banned by: "..gBanData.BannedBy.." - Ban type: Game - Days left: "..timeLeftInDays.." - Reason: "..gBanData.Reason)
+				banned = true
+			end
+		elseif (banData) then
+			player:Kick("Banned by: "..banData.BannedBy.." - Ban type: Server - Reason: "..tostring(banData.Reason))
 			banned = true
 		end
-	elseif (banData) then
-		player:Kick("Banned by: "..banData.BannedBy.." - Ban type: Server - Reason: "..tostring(banData.Reason))
-		banned = true
-	end
-	if banned then
-		for i, plyr in pairs(players:GetPlayers()) do
-			if (plyr ~= player) then
-				sendData(plyr, "Output", {"Note", player.Name.." is banned from the server"})
+		if banned then
+			for i, plyr in pairs(players:GetPlayers()) do
+				if (plyr ~= player) then
+					sendData(plyr, "Output", {"Note", player.Name.." is banned from the server"})
+				end
 			end
+			return;
 		end
-		return;
 	end
 	
+	for i, plyr in pairs(players:GetPlayers()) do
+		if plyr ~= player then
+			sendData(plyr, "Output", {"Note", player.Name.." has joined the server"})
+		end
+	end
+
 	-- set player's database
-	local allowed = checkAllowed(player)
 	local playerData = dataBase[player.userId]
 	if not playerData then
-		playerData = {Player = player, SB = allowed, Quicks = {}, Scripts = {}, Saves = {}, Close = emptyFunction}
+		playerData = {Player = player, Quicks = {}, Scripts = {}, Saves = {}}
 		dataBase[player.userId] = playerData
 		if Moderators[player.userId] then
 			playerData.Mod = true
@@ -2682,9 +2386,8 @@ playerAdded(function(player)
 		playerData.Player = player
 		playerData.Editing = nil
 		playerData.UserSettings = nil
-		playerData.SB = allowed
 	end
-	
+
 	newThread(function()
 		local saves = LoadString(player, saveKey)
 		saves = saves ~= "" and http:JSONDecode(saves) or {}
@@ -2725,7 +2428,7 @@ playerAdded(function(player)
 			AntiFallDeath = true,
 			ResizableOutput = true
 		}
-		
+
 		local succeeded = Pcall(function()
 			local userSettings = LoadString(player, settingKey)
 			userSettings = userSettings ~= "" and http:JSONDecode(userSettings) or defaultSettings;
@@ -2740,22 +2443,71 @@ playerAdded(function(player)
 			playerData.UserSettings = defaultSettings;
 		end
 	end)
-	
-	if allowed then
-		setupSB(player)
-	end
-end)
 
-players.PlayerAdded:Connect(function(player)
-	for i, plyr in pairs(players:GetPlayers()) do
-		if plyr ~= player then
-			sendData(plyr, "Output", {"Note", player.Name.." has joined the server"})
+	--Data Transfer
+	local dataTransfer = Instance.new("Model")
+	dataTransfer.Name = "SB_DataTransfer"
+	local handleScripts = Instance.new("RemoteFunction", dataTransfer)
+	handleScripts.Name = "SB_HandleScripts"
+	handleScripts.OnServerInvoke = function(plr, type, source, parent)
+		if plr ~= player then return end
+		if source and parent then
+			local name = type == "Local" and "NLS" or "NS"
+			local scriptObj = newScript(type, plr, name.." - "..parent:GetFullName(), decode(source))
+			scriptObj.Name = name
+			scriptObj.Parent = parent
+			return scriptObj
 		end
 	end
+	local getLocalOwner = Instance.new("RemoteFunction", dataTransfer)
+	getLocalOwner.Name ="SB_GetLocalOwner"
+	getLocalOwner.OnServerInvoke = function(plr, script)
+		return unpack(clientScripts[script] or {})
+	end
+	local commandRemote = Instance.new("RemoteFunction", dataTransfer)
+	commandRemote.Name = "SB_ReplicatorRemote"
+	local numInput = 0
+	commandRemote.OnServerInvoke = function(plr, num, value)
+		if plr ~= player then return end
+		if num == numInput or num == (numInput + 1) then
+			numInput = num
+			if type(value) == "string" and value ~= "" then
+				newThread(Pcall, SBInput, plr, "/e "..value, true)
+			end
+		end
+	end
+	local userSettings = Instance.new("RemoteFunction", dataTransfer)
+	userSettings.Name = "SB_UserSettings"
+	userSettings.OnServerInvoke = function(plr, typ, data)
+		if plr ~= player then return end
+		while not playerData.UserSettings do task.wait() end
+		if typ == "Get" then
+			return playerData.UserSettings
+		elseif typ == "Set" and (data.Sent == numInput or data.Sent == numInput + 1) then
+			playerData.UserSettings[data.Setting] = data.Value
+			newThread(function()
+				userSettings:InvokeClient(player, "SettingChanged", data.Setting, data.Value)
+			end)
+		end
+	end
+
+	local playerGui = WaitForChildOfClass(player, "PlayerGui")
+
+	playerData.dataTransfer = dataTransfer
+	dataTransfer.Parent = playerGui
+	
+	player.Chatted:Connect(function(msg)
+		Pcall(SBInput, player, msg)
+	end)
+
+	clientManager:Clone().Parent = playerGui
+	guiItems.SB_NotificationGUI:Clone().Parent = player
+	guiItems.SB_OutputGUI:Clone().Parent = player
+	guiItems.SB_OutputGUIScript:Clone().Parent = playerGui
+	guiItems.SBPlayerList:Clone().Parent = playerGui
 end)
 
 players.PlayerRemoving:Connect(function(player)
-	dataBase[player.UserId].SB = false
 	local playerData = dataBase[player.UserId]
 	if playerData and playerData.UserSettings then
 		newThread(SaveString, player, settingKey, http:JSONEncode(playerData.UserSettings))
@@ -2766,61 +2518,3 @@ players.PlayerRemoving:Connect(function(player)
 		end
 	end
 end)
-
-local sb = newproxy(true)
-local meta = getmetatable(sb)
-
-meta.__metatable = "The metatable is locked"
-meta.__call = function(self, obj)
-	local function check(user)
-		local userId = 0;
-		if type(user) == "number" then
-			userId = user;
-		elseif type(user) == "string" then
-			for i, v in pairs(players:GetPlayers()) do
-				if (v.Name == user) then
-					userId = v.UserId;
-					break;
-				end
-			end		
-		elseif (typeof(user) == "Instance" and user:IsA("Player")) then
-			userId = user.UserId;
-		end
-		if (userId ~= 0) then
-			local name = players:GetNameFromUserIdAsync(userId)
-			if name then
-				if Members[userId] or Moderators[userId] then
-					return false, "Player is already allowed to use vsb"
-				else
-					Members[userId] = name
-					local plr
-					for i, v in pairs(players:GetPlayers()) do
-						if v.UserId == userId then
-							plr = v
-							setupSB(v)
-							break
-						end
-					end
-					for _, player in pairs(players:GetPlayers()) do
-						if player ~= plr then
-							sendData(player, "Output", {"Note", name.." is a new member of Script Builder"})
-						end
-					end
-					return true
-				end
-			end
-		end
-		return false, "Unable to get player's user-id"
-	end
-	if (type(obj) == "table") then
-		local responses = {}
-		for i, v in pairs(obj) do
-			responses[v] = {check(v)}
-		end
-		return responses;
-	else
-		return check(obj);
-	end
-end
-
-return sb

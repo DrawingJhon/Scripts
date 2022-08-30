@@ -190,7 +190,7 @@ local ANIMATOR = Humanoid.Animator
 local ANIMATE = Character.Animate
 local UNANCHOR = true
 local CLOCKLOOP = 0
-local SONG = 1382488262
+local SONG = 10764520652
 local CLOCKTARGET = nil
 local CLOCKSPEED = 0
 script.Parent = WEAPONGUI
@@ -2656,7 +2656,7 @@ function SuperiorForm()
 		CLOCKSPEED = 2
 	elseif MODE == "Superior" then
 		CreateSound(147722227, Torso, 4, 1.3, false)
-		SONG = 1382488262
+		SONG = 10764520652
 		VOLUME = 4
 		PITCH = 1
 		sick.TimePosition = 20.7
@@ -2745,7 +2745,7 @@ function VoidedForm()
 		CLOCKSPEED = 0
 	elseif MODE == "Voided" then
 		CreateSound(147722227, Torso, 4, 1.3, false)
-		SONG = 1382488262
+		SONG = 10764520652
 		VOLUME = 4
 		PITCH = 1
 		sick.TimePosition = 20.7
@@ -2837,7 +2837,7 @@ function InjusticeForm()
 	elseif MODE == "Injustice" then
 		CreateSound(147722227, Torso, 4, 1.3, false)
 		SIZE = 1.4
-		SONG = 1382488262
+		SONG = 10764520652
 		VOLUME = 4
 		PITCH = 1
 		sick.TimePosition = 20.7
@@ -2934,7 +2934,7 @@ function TomYumForm()
 		TomYum.Parent = nil
 		CreateSound(147722227, Torso, 4, 1.3, false)
 		SIZE = 1.4
-		SONG = 1382488262
+		SONG = 10764520652
 		VOLUME = 4
 		PITCH = 1
 		sick.TimePosition = 20.7

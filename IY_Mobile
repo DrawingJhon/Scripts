@@ -4616,6 +4616,7 @@ CMDs[#CMDs + 1] = {NAME = 'tpwalk / teleportwalk [num]', DESC = 'Teleports you t
 CMDs[#CMDs + 1] = {NAME = 'untpwalk / unteleportwalk', DESC = 'Undoes tpwalk / teleportwalk'}
 CMDs[#CMDs + 1] = {NAME = 'notifyping / ping', DESC = 'Notify yourself your ping'}
 CMDs[#CMDs + 1] = {NAME = 'trip', DESC = 'Makes your character fall over'}
+CMDs[#CMDs + 1] = {NAME = 'enablekeyboard / keyboard / enablekb', DESC = 'Simulates enabled keyboard in UserInputService.KeyboardEnabled'}
 wait()
 
 for i = 1, #CMDs do
@@ -11921,6 +11922,26 @@ end)
 
 addcmd('removecmd',{'deletecmd'},function(args, speaker)
 	removecmd(args[1])
+end)
+
+local keyboardEnabled = false
+
+addcmd('enablekeyboard',{'keyboard','enablekb'},function(args, speaker)
+	if keyboardEnabled then
+		return
+	end
+	keyboardEnabled = true
+
+	local UIS = game:GetService("UserInputService")
+
+	local old; old = hookmetamethod(game, "__index", function(self, index)
+		if self == UIS then
+			if index == "KeyboardEnabled" then
+				return true
+			end
+		end
+		return old(self, index)
+	end)
 end)
 
 updateColors(currentShade1,shade1)

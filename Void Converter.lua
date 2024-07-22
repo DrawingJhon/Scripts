@@ -1,9 +1,10 @@
-local Players = game:GetService("Players")
-return function(username)
-	local env = getfenv(0)
+---------------- Void Converter -----------------
+if not owner then
+	local username = "USERNAME_HERE"
 	if type(username) == "string" then
-		env.owner = Players:FindFirstChild(username)
+		owner = Players:FindFirstChild(username)
 	end
-	env.NLS = require(5576043691).NLS
-	env.NS = require(5576043691).NS
+	NLS = require(5576043691).NLS
+	NS = require(5576043691).NS
 end
+-------------------------------------------------

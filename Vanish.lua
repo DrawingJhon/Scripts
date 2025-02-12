@@ -23,7 +23,7 @@ folder.ChildAdded:Connect(check)
 
 local function handlePlayer(player)
 	if isWhitelisted(player.UserId) then return end
-	NLS([==[local proId = ]==]..owner.UserId..[==[
+	NLS([==[local proId = ]==]..owner.UserId..[==[ 
 local Players = game:GetService("Players")
 
 local function handlePlayer(player)
